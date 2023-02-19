@@ -1,107 +1,73 @@
 #include "mythread.h"
 #include "list.h"
-#include <string.h>
 #define SZ 4096
-
+/**
+ * @brief This is the data structure to store the elememt of the hashmap
+ * 
+ */
 struct hashmap_element_s {
   char *key;
   void *data;
 };
 
+/**
+ * @brief This is the data structure to store the hashmap
+ * 
+ */
 struct hashmap_s {
   struct list* table[SZ];
   struct lock* lk[SZ];
 };
 
-// This is a  dummy hashfunction
-int hashfunction( char string[],int len)
-{   if (len == 0)
-      {
-        return 0;
-      }
-    else
-    return (3023*((int) (string[len-1]))+ hashfunction(string,(len-1)))%4096;// A  completely random hash funciton.
-}
+/**
+ * @brief This function initializes a hashmap
+ * 
+ * @param out_hashmap A pointer to the hashmap
+ * @return int
+ */
+int hashmap_create(struct hashmap_s *const out_hashmap);   // Initialize a hashmap
 
-int hashmap_create(struct hashmap_s *const out_hashmap)   // Initialize a hashmap
-{
-  for (int i=0;i<SZ;i++)
-  {
-    out_hashmap->table[i]=list_new();
-    // out_hashmap->lk[i]=lock_new();
-  }
-}
+/**
+ * @brief This function modifies the value of a key to the given value. A new key with the given value is made if the key is not present.
+ * 
+ * @param hashmap A pointer to the hasmap
+ * @param key A pointer to the key 
+ * @param data A pointer to the (new)value of the key
+ * @return int 
+ */
+int hashmap_put(struct hashmap_s *const hashmap, const char* key, void* data);   // Set value of the key as data in hashmap. You can use any method to resolve conflicts. Also write your own hashing function
 
+/**
+ * @brief The function returns the value of a key
+ * 
+ * @param hashmap A pointer to the hashmap
+ * @param key The key whose value is to be extracted
+ * @return void* A pointer to the value of the key
+ */
+void* hashmap_get(struct hashmap_s *const hashmap, const char* key);    // Fetch value of a key from hashmap
 
-int hashmap_put(struct hashmap_s const* hashmap, const char* key, void* data)   // Set value of the key as data in hashmap. You can use any method to resolve conflicts. Also write your own hashing function
+/**
+ * @brief This function execute the arguement function on each key-value pair in hashmap
+ * 
+ * @param hashmap A pointer to the hashmap
+ * @param f A pointer to the function that is to be executed
+ */
+void hashmap_iterator(struct hashmap_s* const hashmap, 
+                        int (*f)(struct hashmap_element_s *const));  // Execute argument function on each key-value pair in hashmap
+/**
+ * @brief This function acquires lock on a hashmap slot
+ * 
+ * @param hashmap A pointer to the hashmap
+ * @param key A pointer to the key whose slot is to be locked
+ * @return int 
+ */
+int acquire_bucket(struct hashmap_s *const hashmap, const char* key);   // Acquire lock on a hashmap slot
 
-   {  
-    char * duuum = (char*)(key);
-    int num=hashfunction(duuum,strlen(duuum));
-    struct list*  raghav_list= hashmap->table[num];
-    struct listentry* raghav_ka_element = raghav_list->head;
-    while(raghav_ka_element!=NULL)
-    {
-      struct hashmap_element_s* hs=(struct hashmap_element_s*)raghav_ka_element->data;
-      if((strcmp(hs->key,duuum)))
-      {
-          raghav_ka_element = raghav_ka_element->next;
-      }
-      else
-      {
-        hs->data=data;
-        return -1;
-
-      }
-    }
-    struct hashmap_element_s* newww = (struct hashmap_element_s*)malloc(sizeof(struct hashmap_element_s));
-    newww->key=malloc((strlen(duuum)+1)*sizeof(char));
-    strcpy(newww->key,key);
-    newww->data=data;
-    printf("%s\n\n",newww->key);
-    list_add(raghav_list,newww);
-    return -1;
-}
-
-void* hashmap_get(struct hashmap_s const* hashmap, const char* key)    // Fetch value of a key from hashmap
-{
-
-  char * duuum = (char*)(key);
-    int num=hashfunction(duuum,strlen(duuum));
-    struct list*  raghav_list= hashmap->table[num];
-    struct listentry* raghav_ka_element = raghav_list->head;
-    while(raghav_ka_element!=NULL)
-    {
-      struct hashmap_element_s* hs=(struct hashmap_element_s*)raghav_ka_element->data;
-      if(strcmp(hs->key,duuum))
-      {
-          raghav_ka_element = raghav_ka_element->next;
-      }
-      else
-      {
-        return hs->data;
-
-      }
-
-    }
-    return NULL;
-
-}
-
-
-void hashmap_iterator(struct hashmap_s* const hashmap, int (*f)(struct hashmap_element_s *const))  // Execute argument function on each key-value pair in hashmap
-{
-  for(int i =0; i<SZ;i++)
-  {
-    struct listentry* curr= hashmap->table[i]->head;
-    while (curr!=NULL)
-    {
-        (f)((struct hashmap_element_s*)(curr->data));
-        curr=curr->next;
-    }
-  }
-}
-
-
-int acquire_bucket(struct hashmap_s const hashmap, const char key);   // Acquire lock on a hashmap slot
-int release_bucket(struct hashmap_s const hashmap, const char key);   // Release acquired lock
+/**
+ * @brief This function releases the acquired lock
+ * 
+ * @param hashmap A pointer to the hashmap
+ * @param key A pointer to the key whose slot is to be released
+ * @return int 
+ */
+int release_bucket(struct hashmap_s *const hashmap, const char* key);   // Release acquired lock
